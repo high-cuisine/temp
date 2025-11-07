@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  telegrambot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: telegrambot:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "3500:3500"
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-telegrambot}
+      POSTGRES_USER: ${POSTGRES_USER:-telegrambot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-telegrambot}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:
+

@@ -1,0 +1,13 @@
+node_modules
+dist
+coverage
+.turbo
+.vscode
+.idea
+*.log
+*.tmp
+*.swp
+.DS_Store
+tmp
+test
+

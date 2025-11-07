@@ -44,6 +44,25 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
+## Docker
+
+### Production image
+
+```bash
+# build
+$ docker build -t telegrambot:latest .
+
+# run (make sure to provide required environment variables)
+$ docker run --env-file .env --name telegrambot -p 3000:3000 telegrambot:latest
+```
+
+### Development image (watch mode)
+
+```bash
+$ docker build -f Dockerfile.dev -t telegrambot-dev .
+$ docker run --env-file .env -p 3000:3000 -v $(pwd)/src:/app/src telegrambot-dev
+```
+
 ## Run tests
 
 ```bash
