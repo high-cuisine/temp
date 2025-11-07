@@ -22,6 +22,8 @@ COPY nest-cli.json ./
 COPY libs ./libs
 COPY src ./src
 
+RUN npx prisma migrate dev
+
 RUN npm run build
 
 RUN npm prune --omit=dev
