@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  telegramId  BigInt   @unique
+  tgUsername  String?  @db.VarChar(64)
+  displayName String
+  email       String?  @db.VarChar(255)
+  role        UserRole @default(DEVELOPER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  developerProfile DeveloperProfile?
+  employerProfile  EmployerProfile?
+
+  // Tasks & Feedback
+  tasksAuthored Task[]      @relation("AuthorTasks")
+  offers        TaskOffer[] @relation("UserOffers")
+  feedbacksLeft Feedback[]  @relation("FeedbackAuthor")
+  feedbacksGot  Feedback[]  @relation("FeedbackTarget")
+  payments      Payment[]
+
+  @@map("user")
+}
+
+model DeveloperProfile {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @unique
+  hourlyRate    Decimal? @db.Decimal(10, 2)
+  skills        Json? // массив строк ["Frontend / React", "Backend / Node.js"]
+  walletAddress String?  @db.VarChar(128)
+  bio           String?
+  rating        Float?   @default(0)
+
+  user  User   @relation(fields: [userId], references: [id])
+  tasks Task[] @relation("DeveloperTasks")
+
+  @@map("developer_profile")
+}
+
+model EmployerProfile {
+  id           Int     @id @default(autoincrement())
+  userId       Int     @unique
+  companyName  String? @db.VarChar(255)
+  description  String?
+  website      String?
+  contactEmail String?
+  verified     Boolean @default(false)
+  plankaMode   PlankaAccountMode?
+  plankaEmail  String? @db.VarChar(255)
+  plankaUserId String? @db.VarChar(128)
+  plankaAccessToken String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("employer_profile")
+}
+
+model Task {
+  id           Int        @id @default(autoincrement())
+  authorId     Int
+  developerId  Int? // выбранный исполнитель
+  title        String
+  description  String
+  minBudget    Decimal?   @db.Decimal(10, 2)
+  maxBudget    Decimal?   @db.Decimal(10, 2)
+  timeEstimate String?
+  status       TaskStatus @default(NEW)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  author    User              @relation("AuthorTasks", fields: [authorId], references: [id])
+  developer DeveloperProfile? @relation("DeveloperTasks", fields: [developerId], references: [id])
+  offers    TaskOffer[]
+  feedbacks Feedback[]
+
+  @@map("task")
+}
+
+model TaskOffer {
+  id           Int         @id @default(autoincrement())
+  taskId       Int
+  userId       Int
+  plan         String?
+  proposedCost Decimal?    @db.Decimal(10, 2)
+  proposedTime String?
+  status       OfferStatus @default(PENDING)
+  createdAt    DateTime    @default(now())
+
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation("UserOffers", fields: [userId], references: [id])
+
+  @@map("task_offer")
+}
+
+model Payment {
+  id        Int           @id @default(autoincrement())
+  userId    Int
+  amount    Decimal       @db.Decimal(10, 2)
+  txHash    String?       @db.VarChar(128)
+  status    PaymentStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("payment")
+}
+
+model Feedback {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  authorId  Int
+  targetId  Int
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  task   Task @relation(fields: [taskId], references: [id])
+  author User @relation("FeedbackAuthor", fields: [authorId], references: [id])
+  target User @relation("FeedbackTarget", fields: [targetId], references: [id])
+
+  @@map("feedback")
+}
+
+enum PaymentStatus {
+  PENDING
+  REJECTED
+  IN_WORK
+  REALIZED
+  REFUNDED
+}
+
+enum TaskStatus {
+  NEW
+  IN_PROGRESS
+  SUBMITTED
+  COMPLETED
+  CLOSED
+}
+
+enum OfferStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PlankaAccountMode {
+  CREATE_NEW
+  CONNECT_EXISTING
+}
+
+enum UserRole {
+  DEVELOPER
+  EMPLOYER
+  ADMIN
+}
