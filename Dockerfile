@@ -16,10 +16,10 @@ RUN npm ci
 COPY prisma ./prisma
 
 RUN npx prisma generate
-RUN npx prisma migrate dev
 
 COPY tsconfig*.json ./
 COPY nest-cli.json ./
+COPY libs ./libs
 COPY src ./src
 
 RUN npm run build
